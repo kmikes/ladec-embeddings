@@ -1,3 +1,5 @@
 # Project exclude paths
 /venv/
 /NoteBooks/data/
+LADECv1-2019.csv
+glove.6B.zip
