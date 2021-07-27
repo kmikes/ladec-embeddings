@@ -1,7 +1,7 @@
 # Project exclude paths
 /venv/
 /NoteBooks/data/
-NoteBooks/data/LADECv1-2019.csv
+NoteBooks/data/ladec.csv
 glove.6B.zip
 /.
 /NoteBooks/data/glove.6B.50d.txt
@@ -12,3 +12,4 @@ glove.6B.zip
 /NoteBooks/data/LADECv1-2019.csv
 .idea
 .DS_Store
+/NoteBooks/data/ladec.csv
