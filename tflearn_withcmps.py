@@ -8,8 +8,8 @@ from __future__ import division, print_function, absolute_import
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import tflearn
 
 from numpy import random
