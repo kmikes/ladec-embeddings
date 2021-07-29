@@ -52,6 +52,7 @@ print("Word count: ", len(word_index))
 print("Hits/misses: ", hits, '/', misses)
 
 #vocab = glove.vocab(word_index)
+cmp_embeddings = np.array( df.iloc[:int((0.8*(len(data['c1'])))), 104:154], dtype='float32' )
 
 x_c1 = [vocab[w] for w in c1]
 x_c2 = [vocab[w] for w in c2]
@@ -92,10 +93,16 @@ x = layers.Dense(1024, activation='relu')(x)
 x = layers.Dropout(drop)(x)
 
 x = layers.Dense(1024, activation='linear')(x)
-x = layers.Dense(1024, activation='linear')(x)
+#x = layers.Dense(1024, activation='linear')(x)
+#x = layers.Dense(1024, activation='linear')(x)
 x = layers.BatchNormalization()(x)
 x = layers.Dropout(drop)(x)
 x = layers.Dense(dims, activation='linear')(x)
+
+# I'm almost certain that the values in glove are always between -5 and 5
+layer = layers.experimental.preprocessing.Normalization( mean=0, variance=25 ) #Supposed to change the numbers in the predictions to better match the embeddings
+x = layer(x)
+
 model = keras.Model(input, x)
 model.summary()
 
@@ -125,9 +132,10 @@ print('')
 # '''
 print('')
 for i in range(samples):
+    print('True Embedding:')
     print( y_test[i] )
     print('')
+    print('Predicted Embedding:')
     print( predictions[i] )
-    print('')
     print('')
 # '''
