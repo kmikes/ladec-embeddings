@@ -8,46 +8,23 @@ import os
 import pathlib
 
 from numpy import random
+from scipy import spatial
 
 import torch.nn as nn
 from torch.optim import Adam
 
-# Build Model
-from tensorflow.keras import layers
-
 dims = 50
-#dims = 100
-
-# activation = "relu"
-# size = 128
 drop = 0.1
-input_shape = (2*dims)
 
-input = keras.Input(shape=input_shape, dtype="float64")
-x = layers.BatchNormalization()(input)
-x = layers.Dense(128, activation='linear')(x)
-x = layers.Dropout(drop)(x)
-x = layers.Dense(256, activation='relu')(x)
-x = layers.Dropout(drop)(x)
-x = layers.Dense(512, activation='relu')(x)
-x = layers.Dropout(drop)(x)
-x = layers.Dense(1024, activation='linear')(x)
-x = layers.Dropout(drop)(x)
-x = layers.Dense(1024, activation='linear')(x)
-x = layers.Dropout(drop)(x)
-x = layers.Dense(dims, activation='linear')(x)
-model = keras.Model(input, x)
-model.summary()
-
-
+# Load Data
 data = pd.read_csv('NoteBooks/data/all_embeddings_forML.csv')
 
 voc = np.unique( data[ ['c1', 'c2', 'cmp'] ].values.reshape(-1) )
 # print( voc.shape )
 
 # Shuffle the data
-random.seed(3)
-np.random.seed(3)
+random.seed(1)
+np.random.seed(1)
 
 df = data.copy()
 # print(df.head())
@@ -55,7 +32,6 @@ df = df.sample(frac=1).reset_index(drop=True)
 # print(df.head())
 
 # Extract a training & validation split
-# data
 c1 = list(df['c1'])
 c2 = list(df['c2'])
 compounds = list(df['cmp'])
@@ -97,9 +73,31 @@ y_train, y_test = tf.split(y, num_or_size_splits=[rows_train, rows_test])
 #    os.path.expanduser("~"), "PycharmProjects/pythonProject/NoteBooks/data/glove.6B.%d.txt" % dims
 #)
 
-#Set up Word Vectors
-from scipy import spatial
 
+# Build Model
+from tensorflow.keras import layers
+
+input_shape = (2*dims)
+# Each X is a tensor with shape=(None, 2*dims)
+# Timestep is probably 1
+
+input = keras.Input(shape=input_shape, dtype="float64")
+
+x = layers.Dense(128, activation='relu')(input)
+x = layers.Dense(256, activation='relu')(x)
+x = layers.Dropout(drop)(x)
+
+x = layers.Dense(512, activation='relu')(x)
+x = layers.Dense(1024, activation='relu')(x)
+x = layers.Dropout(drop)(x)
+
+x = layers.Dense(1024, activation='linear')(x)
+x = layers.Dense(1024, activation='linear')(x)
+x = layers.BatchNormalization()(x)
+x = layers.Dropout(drop)(x)
+x = layers.Dense(dims, activation='linear')(x)
+model = keras.Model(input, x)
+model.summary()
 
 # Train Model
 model.compile(
@@ -121,36 +119,15 @@ def find_closest_embeddings(vocab, embedding):
 
 print('')
 for i in range(samples):
-    print( df.loc[rows_test+i,['c1','c2','cmp']], find_closest_embeddings(vocab, predictions[i])[:5] )
+    print( df.loc[rows_test+i,['c1', 'c2', 'cmp']], find_closest_embeddings(vocab, predictions[i])[:5] )
 print('')
 
-#def find_closest_embeddings(vocab, embedding):
-#    return [spatial.distance.euclidean(v, embedding) for v in vocab.vectors]
-
-
-
-# Output Thingy
-"""pred_embeddings = model.predict(
-    testX[0]
-)"""
-
-#print( pred_embeddings )
-
-#print('')
-#print(find_closest_embeddings( pred_embeddings[0] )[:5])
-#print(find_closest_embeddings( pred_embeddings[1] )[:5])
-#print('')
-
-'''
-# Prepare embedding matrix
-from tensorflow.keras.layers.experimental.preprocessing import TextVectorization
-
-vectorizer = TextVectorization(max_tokens=20000, output_sequence_length=200)
-text_ds = tf.data.Dataset.from_tensor_slices( ).batch(128)
-vectorizer.adapt(text_ds)
-
-# print( vectorizer.get_vocabulary()[:5] )
-
-voc = vectorizer.get_vocabulary()
-word_index = dict(zip(voc, range(len(voc))))
-'''
+# '''
+print('')
+for i in range(samples):
+    print( y_test[i] )
+    print('')
+    print( predictions[i] )
+    print('')
+    print('')
+# '''
