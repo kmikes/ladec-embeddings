@@ -13,3 +13,15 @@ glove.6B.zip
 .idea
 .DS_Store
 /NoteBooks/data/ladec.csv
+.vector_cache/glove.6B.100d.txt
+.vector_cache/glove.6B.100d.txt.pt
+.vector_cache/glove.6B.200d.txt
+.vector_cache/glove.6B.300d.txt
+.vector_cache/glove.6B.300d.txt.pt
+.vector_cache/glove.6B.50d.txt
+.vector_cache/glove.6B.50d.txt.pt
+.vector_cache/glove.6B.50d.txt_100000.pt
+.vector_cache/glove.6B.50d.txt_120000.pt
+glove.6B.50d.txt
+glove.6B.200d.txt
+glove.6B.100d.txt
