@@ -85,16 +85,19 @@ input_shape = (2*dims)
 input = keras.Input(shape=input_shape, dtype="float64")
 
 x = layers.Dense(128, activation='relu')(input)
-x = layers.Dense(256, activation='relu')(x)
+x = layers.Dense(256, activation='linear')(x)
+#x = layers.Dense(256, activation='relu')(x)
 x = layers.Dropout(drop)(x)
 
 x = layers.Dense(512, activation='relu')(x)
-x = layers.Dense(1024, activation='relu')(x)
+#x = layers.Dense(512, activation='linear')(x)
 x = layers.Dropout(drop)(x)
 
 x = layers.Dense(1024, activation='linear')(x)
-#x = layers.Dense(1024, activation='linear')(x)
-#x = layers.Dense(1024, activation='linear')(x)
+x = layers.Dense(1024, activation='linear')(x)
+x = layers.Dropout(drop)(x)
+
+x = layers.Dense(1024, activation='linear')(x)
 x = layers.BatchNormalization()(x)
 x = layers.Dropout(drop)(x)
 x = layers.Dense(dims, activation='linear')(x)
@@ -108,7 +111,7 @@ model.summary()
 
 # Train Model
 model.compile(
-    loss="cosine_similarity", optimizer="Adam", metrics=["acc"]
+    loss="mean_squared_error", optimizer="Adam", metrics=["acc"]
 )
 model.fit(X_train, y_train, batch_size=16, epochs=20, validation_split=0.25)
 
