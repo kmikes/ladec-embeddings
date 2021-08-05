@@ -124,8 +124,7 @@ predictions = model.predict(X_test[:samples])
 print("predictions shape:", predictions.shape)
 
 def find_closest_embeddings(vocab, embedding):
-    return sorted(vocab.itos[:1000],
-                      key=lambda word: spatial.distance.euclidean(vocab[word], embedding))
+    return sorted(vocab.itos[:1000],key=lambda word: spatial.distance.euclidean(vocab[word], embedding))
 
 print('')
 for i in range(samples):

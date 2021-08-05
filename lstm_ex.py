@@ -16,20 +16,19 @@ Links:
 
 from __future__ import division, print_function, absolute_import
 
-import torchtext
 import pandas as pd
 import numpy as np
-import tensorflow as tf
 
 from numpy import random
-from scipy import spatial
 
-from tensorflow import keras
+import tensorflow as tf
+import tflearn
+from tflearn.data_utils import to_categorical, pad_sequences
 
 # Load Data
 data = pd.read_csv('NoteBooks/data/all_embeddings_forML.csv')
 
-voc = np.unique( data[ ['c1', 'c2', 'cmp'] ].values.reshape(-1) )
+voc = np.unique(data[['c1', 'c2', 'cmp']].values.reshape(-1))
 # print( voc.shape )
 
 dims = 50
@@ -43,98 +42,131 @@ df = data.copy()
 df = df.sample(frac=1).reset_index(drop=True)
 # print(df.head())
 
-print("Loading glove embeddings..")
-word_index = dict(zip(voc, range(len(voc))))
-vocab = torchtext.vocab.GloVe(name='6B',dim=dims)
-vocab_words = set(vocab.itos)
-hits, misses = 0,0
-for w in word_index.keys():
-    if w in vocab_words:
-        hits=hits+1
-    else:
-        misses = misses+1
+# EMBEDDINGS DICT
+from scipy import spatial
 
-print("Word count: ", len(word_index))
-print("Hits/misses: ", hits, '/', misses)
+embeddings_dict = {}
 
-#SETUP VISIBLE TESTING
+with open("NoteBooks/data/glove.6B.50d.txt", 'r') as f:
+    for line in f:
+        values = line.split()
+        word = values[0]
+        vector = np.asarray(values[1:], "float32")
+        embeddings_dict[word] = vector
+
+
+def find_closest_embeddings(embedding):
+    return sorted(embeddings_dict.keys(), key=lambda word: spatial.distance.euclidean(embeddings_dict[word], embedding))
+
+
+# SETUP VISIBLE TESTING
 compounds = list(df['cmp'])
 rows = len(compounds)
 rows_train = int(0.8 * rows)
 rows_test = rows - rows_train
 
-cmp_embeddings = np.array( df.iloc[:int((0.8*(len(data['c1'])))), 104:154], dtype='float32' )
+cmp_embeddings = np.array(df.iloc[:int((0.8 * (len(data['c1'])))), 104:154], dtype='float32')
 
 # trainX - np array of float32, 80% of the data
-trainX =  df.iloc[:int((0.8*(len(data['c1'])))), 4:104]
-trainY =  df.iloc[:int((0.8*(len(data['c1'])))), 104:154]
+trainX = np.array(df.iloc[:int((0.8 * (len(data['c1'])))), 4:104], dtype='float32')
+trainY = np.array(df.iloc[:int((0.8 * (len(data['c1'])))), 104:154], dtype='float32')
 
-testX = df.iloc[int((0.8*(len(data['c1'])))):, 4:104]
-testY =  df.iloc[int((0.8*(len(data['c1'])))):, 104:154]
+testX = np.array(df.iloc[int((0.8 * (len(data['c1'])))):, 4:104], dtype='float32')
+testY = np.array(df.iloc[int((0.8 * (len(data['c1'])))):, 104:154], dtype='float32')
+
+
+def normalize(array):
+    for i in range(len(array)):
+        array[i] += 5
+        array[i] = array[i] / 10
+    return array
+
+
+def denormalize(array):
+    # list = np.array( array, dtype='float32' )
+    # print (list)
+
+    for i in range(len(array)):
+        array[i] *= 2
+        # array[i] -= 5
+
+    return array
+
 
 '''
+trainX = normalize(trainX)
+testX = normalize(testX)
+
+trainY = normalize(trainY)
+testY = normalize(testY)
+
 print('')
 print( 'trainX', trainX.shape )
 print( 'trainY', trainY.shape)
 print( 'testX', testX.shape )
 print( 'testY', testY.shape )
 print('')
+print( 'trainX', trainX )
 '''
-
 
 # Network building
-from keras import layers
+net = tflearn.input_data([None, 2 * dims])
+# print(net.shape)
 
-model = keras.Sequential(
-    [
-        layers.Reshape( (4,25), input_shape=(100,)),
-        layers.SimpleRNN(128),
-        #layers.Dense(512, activation='linear'),
-        #layers.Dense(1024, activation='linear'),
-        #layers.Dense(128, activation='linear'),
-        layers.Dense(50, activation='linear')
-    ]
-)
+net = tflearn.fully_connected(net, 128, activation='linear')
 
-'''
-foo = testX
-bar = model(foo)
-print("Number of weights after calling the model:", len(model.weights))  # 5
+net = tflearn.reshape(net, new_shape=[-1, 2, 64])
+net = tflearn.lstm(net, 128, dropout=0.8)
+# print(net.shape)
 
-model.summary()
-'''
+net = tflearn.reshape(net, new_shape=[-1, 2, 64])
+net = tflearn.lstm(net, 128, dropout=0.8)
+# print(net.shape)
+
+net = tflearn.fully_connected(net, 50, activation='linear')
+
+#net = tflearn.batch_normalization(net, beta=0.0, gamma=2.0, trainable=False)
+
+net = tflearn.regression(net, optimizer='adam', learning_rate=0.0001, loss='mean_square')
 
 # Training
-model.compile(loss="mean_squared_error", optimizer="Adam", metrics=["acc"])
-model.fit( trainX, trainY, batch_size=16, epochs=40, validation_split=0.25)
-
-model.summary()
+model = tflearn.DNN(net, tensorboard_verbose=0)
+model.fit(trainX, trainY, validation_set=0.25, show_metric=True, batch_size=16)
 
 result = model.evaluate(testX, testY)
-print("test loss, test acc:", result)
+print("test acc:", result)
 
-#Visible Testing
+# Visible Testing
 samples = 3
 print("Generate predictions for ", samples, " samples")
 predictions = model.predict(testX[:samples])
 print("predictions shape:", predictions.shape)
-
-def find_closest_embeddings(vocab, embedding):
-    return sorted(vocab.itos[:1000],
-                      key=lambda word: spatial.distance.euclidean(vocab[word], embedding))
-
 print('')
+print('')
+
+'''
+print('TRUE EMBEDDING')
 for i in range(samples):
-    print( df.loc[rows_test+i,['c1', 'c2', 'cmp']], find_closest_embeddings(vocab, predictions[i])[:5] )
+    print(df.loc[rows_test+i, ['c1', 'c2', 'cmp']], find_closest_embeddings( testY[i] )[:5])
 print('')
+# '''
+
+print('PREDICTED EMBEDDING')
+for i in range(samples):
+    print(df.loc[rows_test + i, ['c1', 'c2', 'cmp']], find_closest_embeddings(predictions[i])[:5])
+print('')
+
+# print( find_closest_embeddings( embeddings_dict['hello'])[:5] )
 
 # '''
 print('')
 for i in range(samples):
     print('True Embedding:')
-    print( testY[i] )
+    print(testY[i])
     print('')
     print('Predicted Embedding:')
-    print( predictions[i] )
+    print(predictions[i])
     print('')
 # '''
+
+# denormalize(predictions[i])
