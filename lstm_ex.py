@@ -20,10 +20,18 @@ import pandas as pd
 import numpy as np
 
 from numpy import random
+from scipy import spatial
 
-import tensorflow as tf
 import tflearn
-from tflearn.data_utils import to_categorical, pad_sequences
+from tflearn.layers.core import input_data, dropout, fully_connected
+from tflearn.layers.embedding_ops import embedding
+from tflearn.layers.recurrent import bidirectional_rnn, BasicLSTMCell
+from tflearn.layers.estimator import regression
+
+#from tflearn.objectives import cosine_similarity
+
+
+# from tflearn.data_utils import to_categorical, pad_sequences
 
 # Load Data
 data = pd.read_csv('NoteBooks/data/all_embeddings_forML.csv')
@@ -43,7 +51,6 @@ df = df.sample(frac=1).reset_index(drop=True)
 # print(df.head())
 
 # EMBEDDINGS DICT
-from scipy import spatial
 
 embeddings_dict = {}
 
@@ -74,6 +81,8 @@ trainY = np.array(df.iloc[:int((0.8 * (len(data['c1'])))), 104:154], dtype='floa
 testX = np.array(df.iloc[int((0.8 * (len(data['c1'])))):, 4:104], dtype='float32')
 testY = np.array(df.iloc[int((0.8 * (len(data['c1'])))):, 104:154], dtype='float32')
 
+testY_copy = testY
+
 
 def normalize(array):
     for i in range(len(array)):
@@ -83,15 +92,10 @@ def normalize(array):
 
 
 def denormalize(array):
-    # list = np.array( array, dtype='float32' )
-    # print (list)
-
     for i in range(len(array)):
-        array[i] *= 2
-        # array[i] -= 5
-
+        array[i] *= 10
+        array[i] -= 5
     return array
-
 
 '''
 trainX = normalize(trainX)
@@ -100,6 +104,18 @@ testX = normalize(testX)
 trainY = normalize(trainY)
 testY = normalize(testY)
 
+print('Denormalized:')
+for i in range(3):
+    print( df.loc[ int((0.8 * (len(data['c1']))))+i, ['cmp'] ] )
+    print('Original Embedding:')
+    print( testY_copy[i] )
+    print('')
+    print('Denormalized Embedding:')
+    print( denormalize(testY[i]) )
+    print('')
+# '''
+
+'''
 print('')
 print( 'trainX', trainX.shape )
 print( 'trainY', trainY.shape)
@@ -110,28 +126,41 @@ print( 'trainX', trainX )
 '''
 
 # Network building
-net = tflearn.input_data([None, 2 * dims])
-# print(net.shape)
+net = input_data([None, 2 * dims])
 
-net = tflearn.fully_connected(net, 128, activation='linear')
+#net = embedding(net, input_dim=20000, output_dim=128)
 
-net = tflearn.reshape(net, new_shape=[-1, 2, 64])
-net = tflearn.lstm(net, 128, dropout=0.8)
-# print(net.shape)
+net = tflearn.reshape(net, [-1,2,50])
+net = bidirectional_rnn(net, BasicLSTMCell(128), BasicLSTMCell(128))
+net = dropout(net, 0.8)
+# print( net.shape )
 
-net = tflearn.reshape(net, new_shape=[-1, 2, 64])
-net = tflearn.lstm(net, 128, dropout=0.8)
-# print(net.shape)
+net = tflearn.reshape(net, [-1,2,128])
+net = bidirectional_rnn(net, BasicLSTMCell(128), BasicLSTMCell(128))
+net = dropout(net, 0.8)
+# print( net.shape )
 
-net = tflearn.fully_connected(net, 50, activation='linear')
+net = tflearn.reshape(net, [-1,2,128])
+net = bidirectional_rnn(net, BasicLSTMCell(128), BasicLSTMCell(128))
+net = dropout(net, 0.8)
+# print( net.shape )
 
-#net = tflearn.batch_normalization(net, beta=0.0, gamma=2.0, trainable=False)
+net = tflearn.reshape(net, [-1,2,128])
+net = bidirectional_rnn(net, BasicLSTMCell(128), BasicLSTMCell(128))
+net = dropout(net, 0.5)
+# print( net.shape )
 
-net = tflearn.regression(net, optimizer='adam', learning_rate=0.0001, loss='mean_square')
+net = tflearn.reshape(net, [-1,2,128])
+net = bidirectional_rnn(net, BasicLSTMCell(128), BasicLSTMCell(128))
+net = dropout(net, 0.5)
+
+net = fully_connected(net, 50, activation='linear')
+net = tflearn.regression(net, optimizer='adam', learning_rate=0.001, loss='mean_square')
+#change to cosine similarity
 
 # Training
 model = tflearn.DNN(net, tensorboard_verbose=0)
-model.fit(trainX, trainY, validation_set=0.25, show_metric=True, batch_size=16)
+model.fit(trainX, trainY, validation_set=0.25, show_metric=True, batch_size=4)
 
 result = model.evaluate(testX, testY)
 print("test acc:", result)
@@ -144,28 +173,28 @@ print("predictions shape:", predictions.shape)
 print('')
 print('')
 
-'''
+# '''
 print('TRUE EMBEDDING')
 for i in range(samples):
-    print(df.loc[rows_test+i, ['c1', 'c2', 'cmp']], find_closest_embeddings( testY[i] )[:5])
+    print(df.loc[rows_train + i, ['c1', 'c2', 'cmp']], find_closest_embeddings( testY[i] )[:5])
 print('')
 # '''
 
 print('PREDICTED EMBEDDING')
 for i in range(samples):
-    print(df.loc[rows_test + i, ['c1', 'c2', 'cmp']], find_closest_embeddings(predictions[i])[:5])
+    print(df.loc[rows_train + i, ['c1', 'c2', 'cmp']], find_closest_embeddings( predictions[i] )[:5])
 print('')
 
 # print( find_closest_embeddings( embeddings_dict['hello'])[:5] )
 
 # '''
-print('')
+print('Denormalized:')
 for i in range(samples):
     print('True Embedding:')
-    print(testY[i])
+    print( testY[i] )
     print('')
     print('Predicted Embedding:')
-    print(predictions[i])
+    print( predictions[i] )
     print('')
 # '''
 
