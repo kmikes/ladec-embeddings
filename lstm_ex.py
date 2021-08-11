@@ -132,35 +132,31 @@ net = input_data([None, 2 * dims])
 
 net = tflearn.reshape(net, [-1,2,50])
 net = bidirectional_rnn(net, BasicLSTMCell(128), BasicLSTMCell(128))
-net = dropout(net, 0.8)
-# print( net.shape )
+# net = dropout(net, 0.8)
 
 net = tflearn.reshape(net, [-1,2,128])
 net = bidirectional_rnn(net, BasicLSTMCell(128), BasicLSTMCell(128))
-net = dropout(net, 0.8)
-# print( net.shape )
+# net = dropout(net, 0.8)
 
 net = tflearn.reshape(net, [-1,2,128])
 net = bidirectional_rnn(net, BasicLSTMCell(128), BasicLSTMCell(128))
-net = dropout(net, 0.8)
-# print( net.shape )
+# net = dropout(net, 0.8)
 
 net = tflearn.reshape(net, [-1,2,128])
 net = bidirectional_rnn(net, BasicLSTMCell(128), BasicLSTMCell(128))
-net = dropout(net, 0.5)
-# print( net.shape )
+# net = dropout(net, 0.5)
 
 net = tflearn.reshape(net, [-1,2,128])
 net = bidirectional_rnn(net, BasicLSTMCell(128), BasicLSTMCell(128))
-net = dropout(net, 0.5)
+# net = dropout(net, 0.8)
 
 net = fully_connected(net, 50, activation='linear')
 net = tflearn.regression(net, optimizer='adam', learning_rate=0.001, loss='mean_square')
-#change to cosine similarity
+# change to cosine similarity
 
 # Training
 model = tflearn.DNN(net, tensorboard_verbose=0)
-model.fit(trainX, trainY, validation_set=0.25, show_metric=True, batch_size=4)
+model.fit(trainX, trainY, n_epoch=60, validation_set=0.25, show_metric=True, batch_size=16)
 
 result = model.evaluate(testX, testY)
 print("test acc:", result)
@@ -173,7 +169,7 @@ print("predictions shape:", predictions.shape)
 print('')
 print('')
 
-# '''
+'''
 print('TRUE EMBEDDING')
 for i in range(samples):
     print(df.loc[rows_train + i, ['c1', 'c2', 'cmp']], find_closest_embeddings( testY[i] )[:5])
@@ -185,9 +181,7 @@ for i in range(samples):
     print(df.loc[rows_train + i, ['c1', 'c2', 'cmp']], find_closest_embeddings( predictions[i] )[:5])
 print('')
 
-# print( find_closest_embeddings( embeddings_dict['hello'])[:5] )
-
-# '''
+'''
 print('Denormalized:')
 for i in range(samples):
     print('True Embedding:')
@@ -197,5 +191,3 @@ for i in range(samples):
     print( predictions[i] )
     print('')
 # '''
-
-# denormalize(predictions[i])

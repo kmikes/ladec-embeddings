@@ -60,7 +60,7 @@ net = tflearn.layers.recurrent.lstm(net, 128, return_seq=True)
 net = tflearn.layers.core.dropout (net, 0.8)
 
 net = tflearn.layers.recurrent.lstm(net, 128, return_seq=False)
-net = tflearn.layers.core.dropout(net, 0.8)
+#net = tflearn.layers.core.dropout(net, 0.8)
 
 net = tflearn.layers.core.fully_connected(net, 50, activation='linear')
 net = tflearn.layers.estimator.regression(net, optimizer='adam', learning_rate=0.001, loss='mean_square')
@@ -68,7 +68,7 @@ net = tflearn.layers.estimator.regression(net, optimizer='adam', learning_rate=0
 
 # Training Network
 model = tflearn.DNN(net, tensorboard_verbose=0)
-model.fit(trainX, trainY, validation_set=0.25, show_metric=True, batch_size=4)
+model.fit(trainX, trainY, n_epoch=30, validation_set=0.25, show_metric=True, batch_size=4)
 
 
 # Results
@@ -77,17 +77,19 @@ print("test acc:", result)
 
 
 # Visible Testing
-samples = 5
+samples = 3
 print("Generate predictions for ", samples, " samples")
 predictions = model.predict(testX[:samples])
 print("predictions shape:", predictions.shape)
 print('')
 print('')
 
+'''
 print('TRUE EMBEDDING')
 for i in range(samples):
     print(df.loc[rows_train + i, ['c1', 'c2', 'cmp']], find_closest_embeddings( testY[i] )[:5])
 print('')
+'''
 
 print('PREDICTED EMBEDDING')
 for i in range(samples):
@@ -95,7 +97,6 @@ for i in range(samples):
 print('')
 
 '''
-print('Denormalized:')
 for i in range(samples):
     print('True Embedding:')
     print( testY[i] )
