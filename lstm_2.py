@@ -68,7 +68,7 @@ net = tflearn.layers.estimator.regression(net, optimizer='adam', learning_rate=0
 
 # Training Network
 model = tflearn.DNN(net, tensorboard_verbose=0)
-model.fit(trainX, trainY, n_epoch=30, validation_set=0.25, show_metric=True, batch_size=4)
+model.fit(trainX, trainY, n_epoch=40, validation_set=0.25, show_metric=True, batch_size=4)
 
 
 # Results
